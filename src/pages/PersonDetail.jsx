@@ -1,46 +1,50 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
-
-const importanceBadge = {
-  Critical: 'bg-red-100 text-red-700 border-red-200',
-  Normal: 'bg-blue-100 text-blue-700 border-blue-200',
-  'Nice to have': 'bg-gray-100 text-gray-600 border-gray-200',
-};
+import TaskRow from '../components/TaskRow';
+import { sortTasks } from '../utils/sortTasks';
 
 export default function PersonDetail() {
   const { name } = useParams();
   const navigate = useNavigate();
-  const { getPersonTasks, COMPANIES } = useApp();
+  const { tasks, COMPANIES, updateTask, deleteTask } = useApp();
 
-  const tasks = getPersonTasks(name).sort((a, b) => {
-    const iOrder = { Critical: 0, Normal: 1, 'Nice to have': 2 };
-    if (iOrder[a.importance] !== iOrder[b.importance]) return iOrder[a.importance] - iOrder[b.importance];
-    return a.daysRemaining - b.daysRemaining;
-  });
+  // All tasks for this person (including Done)
+  const allTasks = tasks.filter(t => t.owner === name);
+  const sorted = sortTasks(allTasks);
+  const openCount = allTasks.filter(t => t.status !== 'Done').length;
 
   return (
-    <div className="p-6 max-w-3xl">
-      <button onClick={() => navigate('/')} className="text-sm text-gray-400 hover:text-gray-600 mb-4 flex items-center gap-1">← Back</button>
+    <div className="p-4 md:p-6 max-w-3xl">
+      <button
+        onClick={() => navigate('/')}
+        className="text-sm text-gray-400 hover:text-gray-600 mb-4 flex items-center gap-1"
+      >
+        ← Back
+      </button>
       <h1 className="text-2xl font-bold text-gray-900 mb-1">{name}</h1>
-      <p className="text-sm text-gray-400 mb-6">{tasks.length} open tasks</p>
+      <p className="text-sm text-gray-400 mb-6">
+        {openCount} open task{openCount !== 1 ? 's' : ''}
+        {allTasks.length > openCount ? `, ${allTasks.length - openCount} done` : ''}
+      </p>
+
       <div className="space-y-1">
-        {tasks.map(task => {
+        {sorted.map(task => {
           const company = COMPANIES.find(c => c.id === task.companyId);
           return (
-            <div
+            <TaskRow
               key={task.id}
-              onClick={() => navigate(`/task/${task.id}`)}
-              className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer border border-transparent hover:border-gray-200"
-            >
-              <div className="flex-1 min-w-0">
-                <span className="text-sm text-gray-900 truncate block">{task.title}</span>
-                <span className="text-xs text-gray-400">{company?.label} · {task.daysRemaining >= 0 ? `${task.daysRemaining}d left` : `${Math.abs(task.daysRemaining)}d overdue`}</span>
-              </div>
-              <span className={`text-xs px-2 py-0.5 rounded border font-medium shrink-0 ${importanceBadge[task.importance]}`}>{task.importance}</span>
-            </div>
+              task={task}
+              company={company}
+              showOwner={false}
+              showCompany={true}
+              onToggleDone={(checked) => updateTask(task.id, { status: checked ? 'Done' : 'Open' })}
+              onDelete={() => deleteTask(task.id)}
+            />
           );
         })}
-        {tasks.length === 0 && <div className="text-sm text-gray-400 italic py-4">No open tasks for {name}.</div>}
+        {allTasks.length === 0 && (
+          <div className="text-sm text-gray-400 italic py-4">No tasks for {name}.</div>
+        )}
       </div>
     </div>
   );

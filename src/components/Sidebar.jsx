@@ -7,7 +7,7 @@ export default function Sidebar() {
   const location = useLocation();
 
   return (
-    <div className="w-48 bg-gray-900 text-white flex flex-col h-screen fixed left-0 top-0 z-10">
+    <div className="hidden md:flex w-48 bg-gray-900 text-white flex-col h-screen fixed left-0 top-0 z-10">
       <div className="p-4 border-b border-gray-700">
         <span className="text-xs uppercase tracking-widest text-gray-400 font-semibold">People</span>
       </div>
