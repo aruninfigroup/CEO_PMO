@@ -39,18 +39,15 @@ export default function Header({ onAddClick }) {
 
       {/* View toggle */}
       <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 shrink-0">
-        <button
-          onClick={() => setViewMode('full')}
-          className={`px-2 md:px-3 py-1 text-xs md:text-sm rounded-md transition-colors ${viewMode === 'full' ? 'bg-white text-gray-900 shadow-sm font-medium' : 'text-gray-500 hover:text-gray-700'}`}
-        >
-          Full
-        </button>
-        <button
-          onClick={() => setViewMode('numbers')}
-          className={`px-2 md:px-3 py-1 text-xs md:text-sm rounded-md transition-colors ${viewMode === 'numbers' ? 'bg-white text-gray-900 shadow-sm font-medium' : 'text-gray-500 hover:text-gray-700'}`}
-        >
-          Nums
-        </button>
+        {[['full', 'Full'], ['numbers', 'Nums'], ['people', 'People']].map(([mode, label]) => (
+          <button
+            key={mode}
+            onClick={() => setViewMode(mode)}
+            className={`px-2 md:px-3 py-1 text-xs md:text-sm rounded-md transition-colors ${viewMode === mode ? 'bg-white text-gray-900 shadow-sm font-medium' : 'text-gray-500 hover:text-gray-700'}`}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
       {/* Settings gear */}

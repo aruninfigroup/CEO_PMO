@@ -1,14 +1,31 @@
 import { useApp } from '../context/AppContext';
 import MetricCards from '../components/MetricCards';
 import CompanyCard from '../components/CompanyCard';
+import PersonCard from '../components/PersonCard';
 
 export default function Dashboard() {
-  const { SECTIONS, COMPANIES } = useApp();
+  const { SECTIONS, COMPANIES, PEOPLE, viewMode } = useApp();
+
+  if (viewMode === 'people') {
+    return (
+      <div className="p-4 md:p-6 max-w-7xl">
+        <MetricCards />
+        <div className="mb-3">
+          <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">People</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            {PEOPLE.map(person => (
+              <PersonCard key={person} person={person} />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-6 max-w-7xl">
       <MetricCards />
-      {SECTIONS.map((section, idx) => {
+      {SECTIONS.map((section) => {
         const companies = COMPANIES.filter(c => c.sectionId === section.id);
         if (companies.length === 0) return null;
         const isPersonal = section.id === 'personal';
