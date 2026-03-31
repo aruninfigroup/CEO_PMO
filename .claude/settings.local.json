@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm create:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Bash(git init:*)",
+      "Bash(git config:*)",
+      "Bash(git add:*)",
+      "Bash(git rm:*)",
+      "Bash(git commit:*)",
+      "Bash(gh repo:*)",
+      "Bash(winget install:*)",
+      "Bash(curl -sL https://github.com/cli/cli/releases/download/v2.65.0/gh_2.65.0_windows_amd64.zip -o /tmp/gh.zip)",
+      "Read(//tmp/**)",
+      "Bash(cd:*)",
+      "Bash(cp:*)",
+      "Bash(mkdir:*)",
+      "Bash(/c/Users/Arun6MambullyOutlook/bin/gh.exe auth:*)",
+      "Bash(echo:*)",
+      "Bash(git credential-manager:*)",
+      "Bash(npx vercel:*)",
+      "Bash(gh auth:*)",
+      "Bash(git:*)",
+      "Bash(node scripts/seed.js)",
+      "Bash(notepad .env)"
+    ]
+  }
+}
