@@ -14,7 +14,19 @@ import Settings from './pages/Settings';
 
 // Inner shell reads viewMode from context so it can adjust layout reactively
 function AppShell({ addPanelOpen, setAddPanelOpen }) {
-  const { viewMode } = useApp();
+  const { viewMode, loading } = useApp();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-gray-900 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-sm text-gray-400">Loading InfiGroup OS…</p>
+        </div>
+      </div>
+    );
+  }
+
   // In People view on mobile, the person cards replace the horizontal people bar
   const showMobilePeopleBar = viewMode !== 'people';
 
