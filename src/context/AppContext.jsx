@@ -130,7 +130,7 @@ export function AppProvider({ children }) {
     if (item.type === 'Task') {
       const newTask = {
         ...item,
-        id: `t${Date.now()}`,
+        id: crypto.randomUUID(),
         status: 'Open',
         mustDo: false,
         waitingOn: false,
@@ -141,7 +141,7 @@ export function AppProvider({ children }) {
       if (error) { console.error('Error adding task:', error); return; }
       setTasks(prev => [...prev, newTask]);
     } else {
-      const newIdea = { ...item, id: `i${Date.now()}` };
+      const newIdea = { ...item, id: crypto.randomUUID() };
       const { error } = await supabase.from('ideas').insert(ideaToDB(newIdea));
       if (error) { console.error('Error adding idea:', error); return; }
       setIdeas(prev => [...prev, newIdea]);
@@ -197,7 +197,7 @@ export function AppProvider({ children }) {
   const addCompany = async (company) => {
     const newCompany = {
       ...company,
-      id: company.id || `c${Date.now()}`,
+      id: company.id || crypto.randomUUID(),
       sortOrder: companies.length,
     };
     const { error } = await supabase.from('entities').insert(entityToDB(newCompany));
@@ -241,7 +241,7 @@ export function AppProvider({ children }) {
   // --- Sections (local state only — no Supabase table) ---
 
   const addSection = (section) =>
-    setSections(prev => [...prev, { ...section, id: section.id || `s${Date.now()}` }]);
+    setSections(prev => [...prev, { ...section, id: section.id || crypto.randomUUID() }]);
   const updateSection = (id, updates) =>
     setSections(prev => prev.map(s => s.id === id ? { ...s, ...updates } : s));
   const deleteSection = (id) =>
