@@ -19,10 +19,20 @@ function getHeatTextColor(criticalCount) {
   return 'text-green-700';
 }
 
+function LightbulbIcon({ size = 12 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0 text-amber-400">
+      <line x1="9" y1="18" x2="15" y2="18" />
+      <line x1="10" y1="22" x2="14" y2="22" />
+      <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14" />
+    </svg>
+  );
+}
+
 const isPersonal = (company) => company.sectionId === 'personal';
 
 export default function CompanyCard({ company }) {
-  const { getCompanyTasks, viewMode } = useApp();
+  const { getCompanyTasks, getCompanyIdeas, viewMode } = useApp();
   const navigate = useNavigate();
   const tasks = getCompanyTasks(company.id); // open tasks only
   const criticalTasks = tasks.filter(t => t.importance === 'Critical');
@@ -65,6 +75,35 @@ export default function CompanyCard({ company }) {
     );
   }
 
+  if (viewMode === 'ideas') {
+    const ideas = getCompanyIdeas(company.id);
+    const top3Ideas = ideas.slice(0, 3);
+    return (
+      <button
+        onClick={() => navigate(`/company/${company.id}`)}
+        className={`border rounded-xl p-4 text-left hover:shadow-md transition-all w-full ${personal ? personalBg : 'border-gray-200 bg-white hover:border-gray-300'}`}
+      >
+        <div className="flex items-start justify-between mb-2">
+          <span className={`font-semibold text-sm leading-tight ${personal ? personalText : 'text-gray-900'}`}>
+            {company.label}
+          </span>
+          <span className={`text-xs font-medium rounded px-1.5 py-0.5 ${personal ? 'bg-purple-100 text-purple-600' : 'bg-amber-100 text-amber-600'}`}>
+            {ideas.length}
+          </span>
+        </div>
+        <div className="space-y-1">
+          {top3Ideas.map(idea => (
+            <div key={idea.id} className="flex items-center gap-2">
+              <LightbulbIcon size={12} />
+              <span className="text-xs text-gray-600 truncate">{idea.title}</span>
+            </div>
+          ))}
+        </div>
+      </button>
+    );
+  }
+
+  // Full view (default)
   return (
     <button
       onClick={() => navigate(`/company/${company.id}`)}
@@ -91,7 +130,6 @@ export default function CompanyCard({ company }) {
             <span className="text-xs text-gray-600 truncate">{task.title}</span>
           </div>
         ))}
-        {tasks.length === 0 && <div className={`text-xs italic ${personal ? 'text-purple-300' : 'text-gray-400'}`}>All clear</div>}
       </div>
     </button>
   );

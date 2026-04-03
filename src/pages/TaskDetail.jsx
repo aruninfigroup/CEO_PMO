@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { formatCompletedAt } from '../utils/sortTasks';
@@ -23,7 +24,6 @@ function computeDueDate(daysRemaining) {
 }
 
 function toInputDate(date) {
-  // Returns YYYY-MM-DD for <input type="date">
   return date.toISOString().split('T')[0];
 }
 
@@ -37,6 +37,14 @@ export default function TaskDetail() {
   const { tasks, COMPANIES, updateTask, deleteTask } = useApp();
 
   const task = tasks.find(t => t.id === id);
+
+  const [titleEdit, setTitleEdit] = useState('');
+
+  // Sync local title state when task loads or id changes
+  useEffect(() => {
+    if (task) setTitleEdit(task.title);
+  }, [task?.id]);
+
   if (!task) return <div className="p-6 text-gray-500">Task not found</div>;
 
   const company = COMPANIES.find(c => c.id === task.companyId);
@@ -65,6 +73,28 @@ export default function TaskDetail() {
     updateTask(task.id, { daysRemaining: diffDays });
   };
 
+  const handleTitleSave = () => {
+    const trimmed = titleEdit.trim();
+    if (!trimmed) {
+      setTitleEdit(task.title);
+      return;
+    }
+    if (trimmed !== task.title) {
+      updateTask(task.id, { title: trimmed });
+    }
+  };
+
+  const handleTitleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      e.target.blur();
+    }
+    if (e.key === 'Escape') {
+      setTitleEdit(task.title);
+      e.target.blur();
+    }
+  };
+
   return (
     <div className="p-4 md:p-6 max-w-2xl">
       <button
@@ -75,9 +105,13 @@ export default function TaskDetail() {
       </button>
 
       <div className="flex items-start justify-between mb-4">
-        <h1 className={`text-xl font-bold text-gray-900 leading-tight flex-1 mr-4 ${isDone ? 'line-through text-gray-400' : ''}`}>
-          {task.title}
-        </h1>
+        <input
+          value={titleEdit}
+          onChange={e => setTitleEdit(e.target.value)}
+          onBlur={handleTitleSave}
+          onKeyDown={handleTitleKeyDown}
+          className={`text-xl font-bold leading-tight flex-1 mr-4 bg-transparent border-b-2 border-transparent hover:border-gray-200 focus:border-gray-900 focus:outline-none transition-colors ${isDone ? 'line-through text-gray-400' : 'text-gray-900'}`}
+        />
         <button
           onClick={handleDelete}
           className="text-xs text-red-400 hover:text-red-600 border border-red-200 rounded px-2 py-1 shrink-0"

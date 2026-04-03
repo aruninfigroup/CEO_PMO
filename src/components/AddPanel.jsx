@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 
 // Clipboard icon for Task type
@@ -24,22 +24,23 @@ function LightbulbIcon({ size = 20 }) {
   );
 }
 
+const BLANK_FORM = { type: 'Task', title: '', companyId: '', owner: '', importance: 'Normal', daysRemaining: 7, notes: '' };
+
 export default function AddPanel({ isOpen, onClose }) {
-  const { addItem, PEOPLE, COMPANIES } = useApp();
-  const [form, setForm] = useState({
-    type: 'Task',
-    title: '',
-    companyId: '',
-    owner: '',
-    importance: 'Normal',
-    daysRemaining: 7,
-    notes: '',
-  });
+  const { addItem, PEOPLE, COMPANIES, prefilledCompanyId } = useApp();
+  const [form, setForm] = useState(BLANK_FORM);
+
+  // When the panel opens, pre-fill the company if a context company is set
+  useEffect(() => {
+    if (isOpen) {
+      setForm(f => ({ ...f, companyId: prefilledCompanyId || '' }));
+    }
+  }, [isOpen, prefilledCompanyId]);
 
   const handleSave = () => {
     if (!form.title.trim() || !form.companyId) return;
     addItem(form);
-    setForm({ type: 'Task', title: '', companyId: '', owner: '', importance: 'Normal', daysRemaining: 7, notes: '' });
+    setForm(BLANK_FORM);
     onClose();
   };
 

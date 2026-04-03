@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../supabase';
-import { PEOPLE, SECTIONS as INITIAL_SECTIONS } from '../data/sampleData';
+import { PEOPLE as STATIC_PEOPLE, SECTIONS as INITIAL_SECTIONS } from '../data/sampleData';
 
 // --- DB (snake_case) ↔ App (camelCase) mappers ---
 
@@ -19,6 +19,7 @@ function taskFromDB(row) {
     waitingOn: row.waiting_on,
     flagged: row.flagged,
     completedAt: row.completed_at,
+    createdAt: row.created_at || null,
   };
 }
 
@@ -80,6 +81,10 @@ function entityToDB(entity) {
   };
 }
 
+function personFromDB(row) {
+  return { id: row.id, name: row.name };
+}
+
 // -------------------------------------------------------
 
 const AppContext = createContext();
@@ -92,6 +97,20 @@ export function AppProvider({ children }) {
   // Sections have no Supabase table — kept in local state from seed defaults
   const [sections, setSections] = useState(INITIAL_SECTIONS);
   const [loading, setLoading] = useState(true);
+  const [people, setPeople] = useState([]);
+
+  // Add panel state — centralised so any page can open it with a pre-filled entity
+  const [addPanelOpen, setAddPanelOpen] = useState(false);
+  const [prefilledCompanyId, setPrefilledCompanyId] = useState(null);
+
+  const openAddPanel = (companyId = null) => {
+    setPrefilledCompanyId(companyId || null);
+    setAddPanelOpen(true);
+  };
+  const closeAddPanel = () => {
+    setAddPanelOpen(false);
+    setPrefilledCompanyId(null);
+  };
 
   // Load all data on mount
   useEffect(() => {
@@ -101,10 +120,12 @@ export function AppProvider({ children }) {
           { data: entitiesData, error: entitiesErr },
           { data: tasksData, error: tasksErr },
           { data: ideasData, error: ideasErr },
+          { data: peopleData, error: peopleErr },
         ] = await Promise.all([
           supabase.from('entities').select('*').order('sort_order', { ascending: true }),
           supabase.from('tasks').select('*'),
           supabase.from('ideas').select('*'),
+          supabase.from('people').select('*').order('name', { ascending: true }),
         ]);
 
         if (entitiesErr) console.error('Error loading entities:', entitiesErr);
@@ -115,6 +136,16 @@ export function AppProvider({ children }) {
 
         if (ideasErr) console.error('Error loading ideas:', ideasErr);
         else setIdeas(ideasData.map(ideaFromDB));
+
+        if (peopleErr) {
+          console.warn('people table not found, using static list. Run seed.js to create it.', peopleErr.message);
+          setPeople(STATIC_PEOPLE.map((name, i) => ({ id: `static-${i}`, name })));
+        } else if (peopleData && peopleData.length > 0) {
+          setPeople(peopleData.map(personFromDB));
+        } else {
+          // Table exists but empty — fall back to static names
+          setPeople(STATIC_PEOPLE.map((name, i) => ({ id: `static-${i}`, name })));
+        }
       } catch (err) {
         console.error('Failed to load data from Supabase:', err);
       } finally {
@@ -136,6 +167,7 @@ export function AppProvider({ children }) {
         waitingOn: false,
         flagged: false,
         completedAt: null,
+        createdAt: null,
       };
       const { error } = await supabase.from('tasks').insert(taskToDB(newTask));
       if (error) { console.error('Error adding task:', error); return; }
@@ -191,6 +223,34 @@ export function AppProvider({ children }) {
   const mustDoTasks = tasks.filter(t => t.mustDo);
   const waitingOnTasks = tasks.filter(t => t.waitingOn);
   const flaggedTasks = tasks.filter(t => t.flagged);
+
+  // --- People ---
+
+  const addPerson = async (name) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const newPerson = { id: crypto.randomUUID(), name: trimmed };
+    const { error } = await supabase.from('people').insert({ id: newPerson.id, name: newPerson.name });
+    if (error) { console.error('Error adding person:', error); return; }
+    setPeople(prev => [...prev, newPerson].sort((a, b) => a.name.localeCompare(b.name)));
+  };
+
+  const updatePerson = async (id, name) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const { error } = await supabase.from('people').update({ name: trimmed }).eq('id', id);
+    if (error) { console.error('Error updating person:', error); return; }
+    setPeople(prev => prev.map(p => p.id === id ? { ...p, name: trimmed } : p));
+  };
+
+  const deletePerson = async (id) => {
+    const { error } = await supabase.from('people').delete().eq('id', id);
+    if (error) { console.error('Error deleting person:', error); return; }
+    setPeople(prev => prev.filter(p => p.id !== id));
+  };
+
+  // PEOPLE is just the array of name strings — backwards-compatible with sidebar, mobile bar, etc.
+  const PEOPLE = people.map(p => p.name);
 
   // --- Entities (companies) ---
 
@@ -254,11 +314,12 @@ export function AppProvider({ children }) {
       addItem, updateTask, deleteTask, deleteIdea,
       getCompanyTasks, getCompanyIdeas, getPersonTasks,
       mustDoTasks, waitingOnTasks, flaggedTasks,
-      PEOPLE,
+      PEOPLE, people, addPerson, updatePerson, deletePerson,
       COMPANIES: companies,
       SECTIONS: sections,
       addCompany, deleteCompany, updateCompany, reorderCompanies,
       addSection, updateSection, deleteSection,
+      addPanelOpen, prefilledCompanyId, openAddPanel, closeAddPanel,
     }}>
       {children}
     </AppContext.Provider>

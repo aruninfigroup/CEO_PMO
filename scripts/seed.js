@@ -11,10 +11,13 @@
  *  tasks     : id (uuid PK), type (text), title (text), company_id (uuid FK→entities),
  *              owner (text), importance (text), status (text),
  *              days_remaining (int), notes (text), must_do (bool),
- *              waiting_on (bool), flagged (bool), completed_at (timestamptz)
+ *              waiting_on (bool), flagged (bool), completed_at (timestamptz),
+ *              created_at (timestamptz DEFAULT now())
  *
  *  ideas     : id (uuid PK), type (text), title (text),
  *              company_id (uuid FK→entities), notes (text)
+ *
+ *  people    : id (uuid PK), name (text NOT NULL), created_at (timestamptz DEFAULT now())
  */
 
 import { createClient } from '@supabase/supabase-js';
@@ -128,7 +131,7 @@ const INITIAL_TASKS = [
   { id: 't040', companyKey: 'admin-hr',    owner: 'Nyomi',  importance: 'Critical',     status: 'Open',    daysRemaining: 10, mustDo: false, waitingOn: false, flagged: false, title: 'Q2 headcount plan across all entities',            notes: '32 open headcount across group. Need approval by next board meeting.' },
   { id: 't041', companyKey: 'admin-hr',    owner: 'Julia',  importance: 'Normal',       status: 'Open',    daysRemaining: 30, mustDo: false, waitingOn: false, flagged: false, title: 'Implement group-wide leave management system',     notes: '' },
   { id: 't042', companyKey: 'admin-hr',    owner: 'Anton',  importance: 'Normal',       status: 'Open',    daysRemaining: 21, mustDo: false, waitingOn: false, flagged: false, title: 'Update employment contracts for SG entities post-restructure', notes: '' },
-  { id: 't043', companyKey: 'ai-tech',     owner: 'Dan',    importance: 'Critical',     status: 'Open',    daysRemaining: 14, mustDo: true,  waitingOn: false, flagged: false, title: 'Deploy InfiGroup OS internal tool to all teams',   notes: 'CEO dashboard and ops tool. React app, deploy to Vercel.' },
+  { id: 't043', companyKey: 'ai-tech',     owner: 'Dan',    importance: 'Critical',     status: 'Open',    daysRemaining: 14, mustDo: true,  waitingOn: false, flagged: false, title: 'Deploy Pulse internal tool to all teams',          notes: 'CEO dashboard and ops tool. React app, deploy to Vercel.' },
   { id: 't044', companyKey: 'ai-tech',     owner: 'Hafiz',  importance: 'Normal',       status: 'Open',    daysRemaining: 30, mustDo: false, waitingOn: false, flagged: false, title: 'Evaluate AI agents for finance automation',        notes: '' },
   { id: 't045', companyKey: 'ai-tech',     owner: 'Binh',   importance: 'Normal',       status: 'Open',    daysRemaining: 45, mustDo: false, waitingOn: false, flagged: false, title: 'Set up group SSO and identity management',         notes: '' },
   { id: 't046', companyKey: 'legal',       owner: 'Anton',  importance: 'Critical',     status: 'Open',    daysRemaining: 7,  mustDo: true,  waitingOn: false, flagged: false, title: 'Complete SG entity restructure filing',            notes: 'ACRA filing due. All shareholder resolutions signed.' },
@@ -146,6 +149,26 @@ const INITIAL_IDEAS = [
   { id: 'i004', companyKey: 'wisedrive', title: 'Wisedrive — fleet management B2B pivot',                notes: 'Corporate fleet is 10x larger TAM than consumer.' },
   { id: 'i005', companyKey: 'volta',     title: 'Volta — carbon credit integration for logistics',       notes: 'Partners want ESG metrics. Could be differentiator.' },
   { id: 'i006', companyKey: 'ai-tech',   title: 'AI & Tech — shared data warehouse across all entities', notes: 'BigQuery or Snowflake. Single source of truth for all P&Ls.' },
+];
+
+// Stable UUIDs for seed people — fixed so re-running is idempotent
+const SEED_PEOPLE = [
+  { id: 'b0000001-0000-0000-0000-000000000001', name: 'Arun' },
+  { id: 'b0000002-0000-0000-0000-000000000002', name: 'Giang' },
+  { id: 'b0000003-0000-0000-0000-000000000003', name: 'Hafiz' },
+  { id: 'b0000004-0000-0000-0000-000000000004', name: 'Adam' },
+  { id: 'b0000005-0000-0000-0000-000000000005', name: 'Luyen' },
+  { id: 'b0000006-0000-0000-0000-000000000006', name: 'Hung' },
+  { id: 'b0000007-0000-0000-0000-000000000007', name: 'Dan' },
+  { id: 'b0000008-0000-0000-0000-000000000008', name: 'Trung' },
+  { id: 'b0000009-0000-0000-0000-000000000009', name: 'Binh' },
+  { id: 'b0000010-0000-0000-0000-000000000010', name: 'Shy' },
+  { id: 'b0000011-0000-0000-0000-000000000011', name: 'Phil' },
+  { id: 'b0000012-0000-0000-0000-000000000012', name: 'Nyomi' },
+  { id: 'b0000013-0000-0000-0000-000000000013', name: 'Julian' },
+  { id: 'b0000014-0000-0000-0000-000000000014', name: 'Chris' },
+  { id: 'b0000015-0000-0000-0000-000000000015', name: 'Anton' },
+  { id: 'b0000016-0000-0000-0000-000000000016', name: 'Julia' },
 ];
 
 // ---- Seed ----
@@ -204,7 +227,22 @@ async function seed() {
   if (ideaErr) { console.error('  ✗ ideas:', ideaErr.message); }
   else console.log(`  ✓ Seeded ${ideas.length} ideas`);
 
+  // People — seed the 16 names into the people table
+  const { error: peopleErr } = await supabase.from('people').upsert(SEED_PEOPLE, { onConflict: 'id' });
+  if (peopleErr) {
+    console.error('  ✗ people:', peopleErr.message);
+    console.error('    → Create the people table first:');
+    console.error('      id uuid PRIMARY KEY DEFAULT gen_random_uuid()');
+    console.error('      name text NOT NULL');
+    console.error('      created_at timestamptz DEFAULT now()');
+  } else {
+    console.log(`  ✓ Seeded ${SEED_PEOPLE.length} people`);
+  }
+
   console.log('\nDone.');
+  console.log('\n⚠️  Vercel environment variables needed:');
+  console.log('   VITE_SUPABASE_URL');
+  console.log('   VITE_SUPABASE_ANON_KEY');
 }
 
 seed().catch(console.error);

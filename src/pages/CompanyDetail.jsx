@@ -6,7 +6,7 @@ import { sortTasks } from '../utils/sortTasks';
 export default function CompanyDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { tasks, COMPANIES, getCompanyIdeas, updateTask, deleteTask, deleteIdea } = useApp();
+  const { tasks, COMPANIES, getCompanyIdeas, updateTask, deleteTask, deleteIdea, openAddPanel } = useApp();
 
   const company = COMPANIES.find(c => c.id === id);
   if (!company) return <div className="p-6 text-gray-500">Company not found</div>;
@@ -29,9 +29,17 @@ export default function CompanyDetail() {
         ← Back
       </button>
 
-      <h1 className={`text-2xl font-bold mb-1 ${isPersonal ? 'text-purple-700' : 'text-gray-900'}`}>
-        {company.label}
-      </h1>
+      <div className="flex items-center justify-between mb-1">
+        <h1 className={`text-2xl font-bold ${isPersonal ? 'text-purple-700' : 'text-gray-900'}`}>
+          {company.label}
+        </h1>
+        <button
+          onClick={() => openAddPanel(company.id)}
+          className="bg-gray-900 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-gray-700 transition-colors font-medium shrink-0"
+        >
+          + Add
+        </button>
+      </div>
       {company.currentFocus && (
         <p className={`text-sm mb-6 ${isPersonal ? 'text-purple-400' : 'text-gray-400'}`}>
           ↗ {company.currentFocus}

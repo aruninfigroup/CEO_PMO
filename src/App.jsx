@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
 import Sidebar from './components/Sidebar';
@@ -11,17 +10,18 @@ import TaskDetail from './pages/TaskDetail';
 import PersonDetail from './pages/PersonDetail';
 import MetricDetail from './pages/MetricDetail';
 import Settings from './pages/Settings';
+import History from './pages/History';
 
-// Inner shell reads viewMode from context so it can adjust layout reactively
-function AppShell({ addPanelOpen, setAddPanelOpen }) {
-  const { viewMode, loading } = useApp();
+// Inner shell reads context so it can adjust layout reactively
+function AppShell() {
+  const { viewMode, loading, addPanelOpen, openAddPanel, closeAddPanel } = useApp();
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-2 border-gray-900 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-          <p className="text-sm text-gray-400">Loading InfiGroup OS…</p>
+          <p className="text-sm text-gray-400">Loading Pulse…</p>
         </div>
       </div>
     );
@@ -35,7 +35,7 @@ function AppShell({ addPanelOpen, setAddPanelOpen }) {
       {/* Fixed left sidebar — desktop only */}
       <Sidebar />
       {/* Fixed top header */}
-      <Header onAddClick={() => setAddPanelOpen(true)} />
+      <Header onAddClick={() => openAddPanel()} />
       {/* Horizontal people bar — mobile only, hidden when People view is active */}
       {showMobilePeopleBar && <MobilePeopleBar />}
       {/* Main content:
@@ -50,20 +50,19 @@ function AppShell({ addPanelOpen, setAddPanelOpen }) {
           <Route path="/person/:name" element={<PersonDetail />} />
           <Route path="/metric/:type" element={<MetricDetail />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/history" element={<History />} />
         </Routes>
       </main>
-      <AddPanel isOpen={addPanelOpen} onClose={() => setAddPanelOpen(false)} />
+      <AddPanel isOpen={addPanelOpen} onClose={closeAddPanel} />
     </div>
   );
 }
 
 export default function App() {
-  const [addPanelOpen, setAddPanelOpen] = useState(false);
-
   return (
     <AppProvider>
       <BrowserRouter>
-        <AppShell addPanelOpen={addPanelOpen} setAddPanelOpen={setAddPanelOpen} />
+        <AppShell />
       </BrowserRouter>
     </AppProvider>
   );

@@ -8,13 +8,19 @@ export default function Settings() {
     COMPANIES, SECTIONS,
     addCompany, deleteCompany, updateCompany, reorderCompanies,
     addSection, updateSection, deleteSection,
+    people, addPerson, updatePerson, deletePerson,
   } = useApp();
 
   const [newSectionLabel, setNewSectionLabel] = useState('');
   const [editingSectionId, setEditingSectionId] = useState(null);
   const [editingSectionLabel, setEditingSectionLabel] = useState('');
   const [newCompany, setNewCompany] = useState({ label: '', sectionId: '', currentFocus: '' });
-  const [confirmDelete, setConfirmDelete] = useState(null); // { type: 'company'|'section', id }
+  const [confirmDelete, setConfirmDelete] = useState(null); // { type: 'company'|'section'|'person', id }
+
+  // People state
+  const [newPersonName, setNewPersonName] = useState('');
+  const [editingPersonId, setEditingPersonId] = useState(null);
+  const [editingPersonName, setEditingPersonName] = useState('');
 
   // Drag state for reordering companies
   const dragItem = useRef(null);
@@ -63,7 +69,20 @@ export default function Settings() {
     if (!confirmDelete) return;
     if (confirmDelete.type === 'company') deleteCompany(confirmDelete.id);
     if (confirmDelete.type === 'section') deleteSection(confirmDelete.id);
+    if (confirmDelete.type === 'person') deletePerson(confirmDelete.id);
     setConfirmDelete(null);
+  };
+
+  const handleAddPerson = () => {
+    if (!newPersonName.trim()) return;
+    addPerson(newPersonName.trim());
+    setNewPersonName('');
+  };
+
+  const handleSavePerson = (id) => {
+    if (!editingPersonName.trim()) return;
+    updatePerson(id, editingPersonName.trim());
+    setEditingPersonId(null);
   };
 
   return (
@@ -75,7 +94,7 @@ export default function Settings() {
         ← Back
       </button>
       <h1 className="text-2xl font-bold text-gray-900 mb-1">Settings</h1>
-      <p className="text-sm text-gray-400 mb-8">Manage entity buckets and sections. Changes take effect immediately.</p>
+      <p className="text-sm text-gray-400 mb-8">Manage people, entities, and sections.</p>
 
       {/* Confirm delete dialog */}
       {confirmDelete && (
@@ -85,6 +104,8 @@ export default function Settings() {
             <p className="text-sm text-gray-500 mb-4">
               {confirmDelete.type === 'section'
                 ? 'Deleting a section will not delete its companies, but they will no longer appear on the dashboard.'
+                : confirmDelete.type === 'person'
+                ? 'This will remove this person from the list. Existing tasks referencing their name will not be affected.'
                 : 'This will permanently remove this entity bucket.'}
             </p>
             <div className="flex gap-2">
@@ -104,6 +125,77 @@ export default function Settings() {
           </div>
         </div>
       )}
+
+      {/* PEOPLE */}
+      <section className="mb-10">
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-4">People</h2>
+        <div className="space-y-2 mb-4">
+          {people.map(person => (
+            <div
+              key={person.id}
+              className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-xl"
+            >
+              {editingPersonId === person.id ? (
+                <>
+                  <input
+                    value={editingPersonName}
+                    onChange={e => setEditingPersonName(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleSavePerson(person.id)}
+                    className="flex-1 border border-gray-200 rounded-lg px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    autoFocus
+                  />
+                  <button
+                    onClick={() => handleSavePerson(person.id)}
+                    className="text-xs bg-gray-900 text-white px-3 py-1.5 rounded-lg font-medium hover:bg-gray-700"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => setEditingPersonId(null)}
+                    className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1.5"
+                  >
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span className="flex-1 text-sm font-medium text-gray-900">{person.name}</span>
+                  <button
+                    onClick={() => { setEditingPersonId(person.id); setEditingPersonName(person.name); }}
+                    className="text-xs text-gray-400 hover:text-gray-700 px-2 py-1 rounded hover:bg-gray-100"
+                  >
+                    Rename
+                  </button>
+                  <button
+                    onClick={() => setConfirmDelete({ type: 'person', id: person.id })}
+                    className="text-xs text-red-400 hover:text-red-600 px-2 py-1 rounded hover:bg-red-50"
+                  >
+                    Delete
+                  </button>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Add person */}
+        <div className="flex gap-2">
+          <input
+            value={newPersonName}
+            onChange={e => setNewPersonName(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleAddPerson()}
+            placeholder="New person name..."
+            className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+          />
+          <button
+            onClick={handleAddPerson}
+            disabled={!newPersonName.trim()}
+            className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Add Person
+          </button>
+        </div>
+      </section>
 
       {/* SECTIONS */}
       <section className="mb-10">
@@ -214,6 +306,18 @@ export default function Settings() {
                       <span className="text-xs text-gray-400 truncate block">↗ {company.currentFocus}</span>
                     )}
                   </div>
+                  {/* Section move dropdown */}
+                  <select
+                    value={company.sectionId}
+                    onChange={e => updateCompany(company.id, { sectionId: e.target.value })}
+                    onClick={e => e.stopPropagation()}
+                    onMouseDown={e => e.stopPropagation()}
+                    className="text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-gray-400 text-gray-600 bg-white shrink-0"
+                  >
+                    {SECTIONS.map(s => (
+                      <option key={s.id} value={s.id}>{s.label}</option>
+                    ))}
+                  </select>
                   <button
                     onClick={() => setConfirmDelete({ type: 'company', id: company.id })}
                     className="text-xs text-red-400 hover:text-red-600 px-2 py-1 rounded hover:bg-red-50 shrink-0"
