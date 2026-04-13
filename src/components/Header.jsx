@@ -32,7 +32,7 @@ function ClockIcon() {
 }
 
 export default function Header({ onAddClick }) {
-  const { viewMode, setViewMode } = useApp();
+  const { viewMode, setViewMode, orphanCount } = useApp();
   const navigate = useNavigate();
 
   return (
@@ -47,7 +47,7 @@ export default function Header({ onAddClick }) {
 
       {/* View toggle */}
       <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 shrink-0">
-        {[['full', 'Full'], ['numbers', 'Nums'], ['people', 'People'], ['ideas', 'Ideas']].map(([mode, label]) => (
+        {[['full', 'Full'], ['numbers', 'Nums'], ['people', 'People'], ['ideas', 'Ideas'], ['projects', 'Projects']].map(([mode, label]) => (
           <button
             key={mode}
             onClick={() => setViewMode(mode)}
@@ -67,14 +67,34 @@ export default function Header({ onAddClick }) {
         <ClockIcon />
       </button>
 
-      {/* Settings gear */}
-      <button
-        onClick={() => navigate('/settings')}
-        className="text-gray-400 hover:text-gray-700 transition-colors p-1.5 rounded-lg hover:bg-gray-100 shrink-0"
-        title="Settings"
-      >
-        <GearIcon />
-      </button>
+      {/* Settings gear + orphan badge */}
+      <div className="relative shrink-0">
+        <button
+          onClick={() => navigate('/settings')}
+          className="text-gray-400 hover:text-gray-700 transition-colors p-1.5 rounded-lg hover:bg-gray-100"
+          title="Settings"
+        >
+          <GearIcon />
+        </button>
+        {orphanCount > 0 && (
+          <button
+            onClick={() => navigate('/history?tab=orphans')}
+            className="absolute -top-1 -right-1 min-w-[16px] h-4 px-0.5 rounded-full text-[10px] font-bold bg-red-500 text-white flex items-center justify-center leading-none"
+            title={`${orphanCount} orphan${orphanCount !== 1 ? 's' : ''} — tasks/ideas missing owner or entity`}
+          >
+            {orphanCount}
+          </button>
+        )}
+        {orphanCount === 0 && (
+          <button
+            onClick={() => navigate('/history?tab=orphans')}
+            className="absolute -top-1 -right-1 min-w-[16px] h-4 px-0.5 rounded-full text-[10px] font-bold bg-gray-300 text-white flex items-center justify-center leading-none"
+            title="No orphans"
+          >
+            0
+          </button>
+        )}
+      </div>
 
       {/* Add button */}
       <button

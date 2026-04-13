@@ -11,6 +11,7 @@ import PersonDetail from './pages/PersonDetail';
 import MetricDetail from './pages/MetricDetail';
 import Settings from './pages/Settings';
 import History from './pages/History';
+import ProjectDetail from './pages/ProjectDetail';
 
 // Inner shell reads context so it can adjust layout reactively
 function AppShell() {
@@ -51,6 +52,7 @@ function AppShell() {
           <Route path="/metric/:type" element={<MetricDetail />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/history" element={<History />} />
+          <Route path="/project/:id" element={<ProjectDetail />} />
         </Routes>
       </main>
       <AddPanel isOpen={addPanelOpen} onClose={closeAddPanel} />

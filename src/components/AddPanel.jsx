@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 
-// Clipboard icon for Task type
 function ClipboardIcon({ size = 20 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -13,7 +12,6 @@ function ClipboardIcon({ size = 20 }) {
   );
 }
 
-// Lightbulb icon for Idea type
 function LightbulbIcon({ size = 20 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -24,22 +22,44 @@ function LightbulbIcon({ size = 20 }) {
   );
 }
 
-const BLANK_FORM = { type: 'Task', title: '', companyId: '', owner: '', importance: 'Normal', daysRemaining: 7, notes: '' };
+const BLANK_FORM = { type: 'Task', title: '', companyId: '', owner: '', importance: 'Normal', daysRemaining: 7, notes: '', projectId: '' };
 
 export default function AddPanel({ isOpen, onClose }) {
-  const { addItem, PEOPLE, COMPANIES, prefilledCompanyId } = useApp();
+  const { addItem, PEOPLE, COMPANIES, projects, prefilledCompanyId, prefilledProjectId } = useApp();
   const [form, setForm] = useState(BLANK_FORM);
 
-  // When the panel opens, pre-fill the company if a context company is set
   useEffect(() => {
     if (isOpen) {
-      setForm(f => ({ ...f, companyId: prefilledCompanyId || '' }));
+      setForm(f => ({
+        ...f,
+        companyId: prefilledCompanyId || '',
+        projectId: prefilledProjectId || '',
+      }));
     }
-  }, [isOpen, prefilledCompanyId]);
+  }, [isOpen, prefilledCompanyId, prefilledProjectId]);
+
+  // Active projects filtered by selected entity (or all active if no entity)
+  const activeProjects = projects.filter(p => p.status === 'Active');
+  const filteredProjects = form.companyId
+    ? activeProjects.filter(p => p.entityId === form.companyId)
+    : activeProjects;
+
+  // When entity changes, clear project if it no longer matches
+  const handleEntityChange = (entityId) => {
+    const newFiltered = entityId
+      ? activeProjects.filter(p => p.entityId === entityId)
+      : activeProjects;
+    const projectStillValid = newFiltered.some(p => p.id === form.projectId);
+    setForm(f => ({
+      ...f,
+      companyId: entityId,
+      projectId: projectStillValid ? f.projectId : '',
+    }));
+  };
 
   const handleSave = () => {
     if (!form.title.trim() || !form.companyId) return;
-    addItem(form);
+    addItem({ ...form, projectId: form.projectId || null });
     setForm(BLANK_FORM);
     onClose();
   };
@@ -54,7 +74,7 @@ export default function AddPanel({ isOpen, onClose }) {
         </div>
 
         <div className="p-5 space-y-4 overflow-y-auto h-[calc(100%-130px)]">
-          {/* Type toggle — with icons */}
+          {/* Type toggle */}
           <div>
             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 block">Type</label>
             <div className="flex gap-2">
@@ -99,13 +119,28 @@ export default function AddPanel({ isOpen, onClose }) {
             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 block">Company / Entity</label>
             <select
               value={form.companyId}
-              onChange={e => setForm(f => ({ ...f, companyId: e.target.value }))}
+              onChange={e => handleEntityChange(e.target.value)}
               className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
             >
               <option value="">Select entity...</option>
               {COMPANIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
             </select>
           </div>
+
+          {/* Project (optional) */}
+          {filteredProjects.length > 0 && (
+            <div>
+              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 block">Project <span className="text-gray-400 font-normal normal-case">(optional)</span></label>
+              <select
+                value={form.projectId}
+                onChange={e => setForm(f => ({ ...f, projectId: e.target.value }))}
+                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+              >
+                <option value="">No project</option>
+                {filteredProjects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </div>
+          )}
 
           {/* Owner — only for Tasks */}
           {form.type === 'Task' && (

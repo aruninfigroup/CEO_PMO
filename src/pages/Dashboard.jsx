@@ -1,9 +1,10 @@
 import { useApp } from '../context/AppContext';
 import CompanyCard from '../components/CompanyCard';
 import PersonCard from '../components/PersonCard';
+import ProjectCard from '../components/ProjectCard';
 
 export default function Dashboard() {
-  const { SECTIONS, COMPANIES, PEOPLE, viewMode } = useApp();
+  const { SECTIONS, COMPANIES, PEOPLE, viewMode, projects, tasks } = useApp();
 
   if (viewMode === 'people') {
     return (
@@ -13,6 +14,27 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {PEOPLE.map(person => (
               <PersonCard key={person} person={person} />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (viewMode === 'projects') {
+    const activeProjects = projects.filter(p => p.status === 'Active');
+    return (
+      <div className="p-4 md:p-6 max-w-7xl">
+        <div className="mb-3">
+          <h2 className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">
+            Projects ({activeProjects.length})
+          </h2>
+          {activeProjects.length === 0 && (
+            <p className="text-sm text-gray-400 italic">No active projects. Add one in Settings.</p>
+          )}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            {activeProjects.map(project => (
+              <ProjectCard key={project.id} project={project} tasks={tasks} />
             ))}
           </div>
         </div>
