@@ -23,7 +23,9 @@
       "Bash(gh auth:*)",
       "Bash(git:*)",
       "Bash(node scripts/seed.js)",
-      "Bash(notepad .env)"
+      "Bash(notepad .env)",
+      "Bash(ls -la /c/Users/Arun6MambullyOutlook/Desktop/infigroup-os/.env*)",
+      "Bash(ls /c/Users/Arun6MambullyOutlook/Desktop/infigroup-os/README*)"
     ]
   }
 }
